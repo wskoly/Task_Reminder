@@ -122,3 +122,5 @@ dmypy.json
 .target/
 .target
 .target/*
+.src/
+.src/*
