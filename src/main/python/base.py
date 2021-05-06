@@ -4,7 +4,7 @@ import sqlite3
 import os
 
 app_data = os.getenv('APPDATA')
-db_dir = os.path.join(app_data, "Task Reminder\Database")
+db_dir = os.path.join(app_data, "KOLY- Task Reminder\Database")
 db_file = db_dir+r"/Task.db"
 if not os.path.exists(db_dir+r"/Task.db"):
     try:

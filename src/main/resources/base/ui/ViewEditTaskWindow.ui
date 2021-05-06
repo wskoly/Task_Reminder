@@ -46,7 +46,7 @@ color:white;</string>
         </font>
        </property>
        <property name="styleSheet">
-        <string notr="true">background-color:rgb(0,0,0,0%);
+        <string notr="true">background-color:rgba(0,0,0,0%);
 color:red;</string>
        </property>
        <property name="text">
@@ -69,7 +69,7 @@ color:black;</string>
         <number>50</number>
        </property>
        <property name="readOnly">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
        <property name="placeholderText">
         <string>Maximum length 50 characters</string>
@@ -86,7 +86,7 @@ color:black;</string>
         </font>
        </property>
        <property name="styleSheet">
-        <string notr="true">background-color:rgb(0,0,0,0%);
+        <string notr="true">background-color:rgba(0,0,0,0%);
 color:red;</string>
        </property>
        <property name="text">

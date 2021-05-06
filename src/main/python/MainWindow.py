@@ -1,20 +1,22 @@
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QProgressBar, QPlainTextEdit, QMainWindow, QTextBrowser, \
     QDialog, QMenu, QAction, QMessageBox, QStatusBar, QSlider, QLabel, QCheckBox, QDialogButtonBox, QVBoxLayout, \
-    QHBoxLayout, QScrollArea, QLineEdit, QTextEdit
+    QHBoxLayout, QScrollArea, QLineEdit, QTextEdit, QSystemTrayIcon
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5 import uic, QtGui
-from time import sleep
-from PyQt5.QtCore import QObject, QThread, pyqtSignal
+from PyQt5.QtCore import QObject, QThread, pyqtSignal, QEvent
 from PyQt5.QtCore import Qt
+from PyQt5 import QtCore
 import resources
-from copy import deepcopy,copy
 from base import *
+
+
 class AddTaskWindow(QDialog):
+    finished = pyqtSignal(tuple)
     def __init__(self):
         super(AddTaskWindow, self).__init__()
-        uic.loadUi(appContext.get_resource('ui/AddTaskWindow.ui'),self)
-        self.NameField = self.findChild(QLineEdit,'NameField')
-        self.DescriptionField = self.findChild(QTextEdit,'DescriptionField')
+        uic.loadUi(appContext.get_resource('ui/AddTaskWindow.ui'), self)
+        self.NameField = self.findChild(QLineEdit, 'NameField')
+        self.DescriptionField = self.findChild(QTextEdit, 'DescriptionField')
         self.buttonBox = self.findChild(QDialogButtonBox, 'buttonBox')
 
         self.buttonBox.accepted.connect(self.AddTaskToDb)
@@ -23,22 +25,50 @@ class AddTaskWindow(QDialog):
     def AddTaskToDb(self):
         nameText = self.NameField.text()
         descriptionText = self.DescriptionField.toPlainText()
-        sql = "INSERT INTO tasks(name,description) VALUES('"+nameText+"','"+descriptionText+"');"
+        sql = "INSERT INTO tasks(name,description) VALUES('" + nameText + "','" + descriptionText + "');"
         cursor.execute(sql)
         db.commit()
+        sql = "SELECT * FROM tasks ORDER BY ID DESC LIMIT 1;"
+        cursor.execute(sql)
+        row = cursor.fetchone()
+        self.finished.emit(row)
+
+
 class ViewEditTaskWindow(QDialog):
-    def __init__(self):
+    finished = pyqtSignal(list)
+
+    def __init__(self, id, index):
         super(ViewEditTaskWindow, self).__init__()
-        uic.loadUi(appContext.get_resource('ui/ViewEditTaskWindow.ui'),self)
-        self.NameField = self.findChild(QLineEdit,'NameField')
-        self.DescriptionField = self.findChild(QTextEdit,'DescriptionFiled')
+        uic.loadUi(appContext.get_resource('ui/ViewEditTaskWindow.ui'), self)
+        self.id = id
+        self.ListIndex = index  # index of Box List
+
+        self.NameField = self.findChild(QLineEdit, 'NameField')
+        self.DescriptionField = self.findChild(QTextEdit, 'DescriptionField')
+        self.buttonBox = self.findChild(QDialogButtonBox, 'buttonBox')
+
+        self.buttonBox.accepted.connect(self.EditTaskToDb)
+        self.buttonBox.rejected.connect(self.reject)
+
+    def EditTaskToDb(self):
+        name = self.NameField.text()
+        description = self.DescriptionField.toPlainText()
+        sql = "UPDATE tasks SET name ='" + name + \
+              "',description='" + description + \
+              "' WHERE ID=" + str(self.id) + ";"
+        cursor.execute(sql)
+        db.commit()
+        self.finished.emit([self.ListIndex, (self.id, name, description)])
+
 
 class AboutWindow(QDialog):
     def __init__(self):
         super(AboutWindow, self).__init__()
-        uic.loadUi(appContext.get_resource('ui/AboutWindow.ui'),self)
+        uic.loadUi(appContext.get_resource('ui/AboutWindow.ui'), self)
+
 
 class TaskBox(QCheckBox):
+
     def __init__(self):
         super(TaskBox, self).__init__()
         font = QFont()
@@ -46,101 +76,217 @@ class TaskBox(QCheckBox):
         font.setBold(True)
         font.setWeight(75)
         self.setFont(font)
+        # self.setToolTip("Check and save to mark this task as completed")
+        self.setStatusTip("Check and save to mark this task as completed")
         self.setStyleSheet(u"QCheckBox {\n"
-                                   "    spacing: 5px;\n"
-                                   "	background-color:rgb(0,0,0,0%);\n"
-                                   "}\n"
-                                   "\n"
-                                   "QCheckBox::indicator {\n"
-                                   "    width: 50px;\n"
-                                   "    height: 50px;\n"
-                                   "}\n"
-                                   "\n"
-                                   "QCheckBox::indicator:unchecked {\n"
-                                   "    image: url(:/Resources/unchecked.png);\n"
-                                   "}\n"
-                                   "\n"
-                                   "QCheckBox::indicator:unchecked:hover {\n"
-                                   "    image: url(:/Resources/unchecked_hover.png);\n"
-                                   "}\n"
-                                   "\n"
-                                   "QCheckBox::indicator:unchecked:pressed {\n"
-                                   "    image: url(:/Resources/unchecked_pressed.png);\n"
-                                   "}\n"
-                                   "\n"
-                                   "QCheckBox::indicator:checked {\n"
-                                   "    image: url(:/Resources/checked.png);\n"
-                                   "}\n"
-                                   "\n"
-                                   "QCheckBox::indicator:checked:hover {\n"
-                                   "    image: url(:/Resources/checked_hover.png);\n"
-                                   "}\n"
-                                   "\n"
-                                   "QCheckBox::indicator:checked:pressed {\n"
-                                   "    image: url(:/Resources/checked_pressed.png);\n"
-                                   "}\n"
-                                   "\n"
-                                   "")
+                           "    spacing: 5px;\n"
+                           "	background-color:rgba(0,0,0,0%);\n"
+                           "}\n"
+                           "\n"
+                           "QCheckBox::indicator {\n"
+                           "    width: 50px;\n"
+                           "    height: 50px;\n"
+                           "}\n"
+                           "\n"
+                           "QCheckBox::indicator:unchecked {\n"
+                           "    image: url(:/Resources/unchecked.png);\n"
+                           "}\n"
+                           "\n"
+                           "QCheckBox::indicator:unchecked:hover {\n"
+                           "    image: url(:/Resources/unchecked_hover.png);\n"
+                           "}\n"
+                           "\n"
+                           "QCheckBox::indicator:unchecked:pressed {\n"
+                           "    image: url(:/Resources/unchecked_pressed.png);\n"
+                           "}\n"
+                           "\n"
+                           "QCheckBox::indicator:checked {\n"
+                           "    image: url(:/Resources/checked.png);\n"
+                           "}\n"
+                           "\n"
+                           "QCheckBox::indicator:checked:hover {\n"
+                           "    image: url(:/Resources/checked_hover.png);\n"
+                           "}\n"
+                           "\n"
+                           "QCheckBox::indicator:checked:pressed {\n"
+                           "    image: url(:/Resources/checked_pressed.png);\n"
+                           "}\n"
+                           "\n"
+                           """QToolTip {
+                                background-color: black;
+                                color: white;
+                                border: black solid 1px
+                           }\n"""
+                           "")
+
 
 class DetailsButton(QPushButton):
     def __init__(self):
         super(DetailsButton, self).__init__()
+        self.setToolTip("View/Edit task")
+        self.setStatusTip("Click this button to view or edit this task")
         self.setStyleSheet(u"QPushButton {\n"
-                                       "	background-color:rgb(0,0,0,0%);\n"
-                                       "	image: url(:/Resources/details.png);\n"
-                                       "}\n"
-                                       "\n"
-                                       "QPushButton:hover {\n"
-                                       "    image: url(:/Resources/details_hover.png);\n"
-                                       "}\n"
-                                       "\n"
-                                       "QPushButton:pressed {\n"
-                                       "    image: url(:/Resources/details_clicked.png);\n"
-                                       "}\n"
-                                       "\n"
-                                       "")
+                           "	background-color:rgba(0,0,0,0%);\n"
+                           "	image: url(:/Resources/details.png);\n"
+                           "}\n"
+                           "\n"
+                           "QPushButton:hover {\n"
+                           "    image: url(:/Resources/details_hover.png);\n"
+                           "}\n"
+                           "\n"
+                           "QPushButton:pressed {\n"
+                           "    image: url(:/Resources/details_clicked.png);\n"
+                           "}\n"
+                           "\n"
+                           """QToolTip {
+                                background-color: black;
+                                color: white;
+                                border: black solid 1px
+                           }\n"""
+                           "")
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
-        uic.loadUi(appContext.get_resource('ui/TaskMainWindow.ui'),self)
-        self.AboutAction = self.findChild(QAction,'actionAbout')
+        uic.loadUi(appContext.get_resource('ui/TaskMainWindow.ui'), self)
+        self.fontDB = QtGui.QFontDatabase()
+        self.fontID = self.fontDB.addApplicationFont(":Resources/BenSenHandwriting.ttf")
+        self.font = QFont('BenSenHandwriting')
+        QApplication.setFont(self.font)
+
+        self.Tray = QSystemTrayIcon(self)
+        self.Tray.setIcon(QIcon(":Resources/TaskReminder.png"))
+        # self.TrayMenu = QMenu()
+        # self.TrayMenu.addMenu("Exit")
+        # self.TrayMenu.add
+        self.Tray.activated.connect(self.__TrayOnclicked)
+        self.Tray.setToolTip("Task Reminder")
+
+        self.addWindow = None
+
+        self.AboutAction = self.findChild(QAction, 'actionAbout')
         self.ExitAction = self.findChild(QAction, 'actionExit')
         self.AddAction = self.findChild(QAction, 'actionAdd_Task')
+        self.buttonBox = self.findChild(QDialogButtonBox,'buttonBox')
 
         self.AboutAction.triggered.connect(self.ShowAbout)
         self.ExitAction.triggered.connect(self.close)
         self.AddAction.triggered.connect(self.ShowAddTask)
-        # self.ScrollBoxContent = self.findChild(QVBoxLayout,'verticalLayout')
-        # self.boxList =[]
-        # self.num = "This is a Task This is a Task"
-        # for i in range(10):
-        #     self.Hlayout = QHBoxLayout()
-        #     self.TaskBox = TaskBox()
-        #     self.TaskBox.setText(self.num)
-        #     self.TaskDetails = DetailsButton()
-        #
-        #     self.boxList.append((self.TaskBox,self.TaskDetails))
-        #     self.Hlayout.addWidget(self.TaskBox)
-        #     self.Hlayout.addWidget(self.TaskDetails,0, Qt.AlignLeft)
-        #     self.ScrollBoxContent.addLayout(self.Hlayout)
-        # print(self.boxList)
+        self.buttonBox.accepted.connect(self.SaveTasks)
+        self.buttonBox.rejected.connect(self.UndoComplete)
+
+        self.ScrollBoxContent = self.findChild(QVBoxLayout, 'verticalLayout')
+        self.status_bar = self.findChild(QStatusBar,"statusbar")
+        self.TaskList = []
+        self.result = self.FetchAllTask()
+        for row in self.result:
+            self.AddTask(row)
+        self.AddButtonConnect()
+
+    def FetchAllTask(self):
+        sql = "SELECT * FROM tasks"
+        cursor.execute(sql)
+        return cursor.fetchall()
+
+    def AddTask(self, row):
+        name = row[1]
+        self.Hlayout = QHBoxLayout()
+        self.TaskBox = TaskBox()
+        self.TaskBox.setText(name)
+        self.TaskDetails = DetailsButton()
+        self.TaskList.append([row, self.TaskBox, self.TaskDetails])
+        self.Hlayout.addWidget(self.TaskBox)
+        self.Hlayout.addWidget(self.TaskDetails, 0, Qt.AlignLeft)
+        self.ScrollBoxContent.addLayout(self.Hlayout)
+
+    def AddButtonConnect(self):
+        for i, task in enumerate(self.TaskList):
+            task[2].clicked.connect(lambda *args, i=i, r=task: self.ShowViewTask(i, r))
 
     def ShowAbout(self):
-        self.about = AboutWindow()
-        self.about.show()
-        self.about.exec_()
+        if hasattr(self,'about'):
+            self.about.show()
+            self.about.activateWindow()
+        else:
+            self.about = AboutWindow()
+            self.about.show()
+            self.about.exec_()
+
 
     def ShowAddTask(self):
-        self.addWindow = AddTaskWindow()
-        self.addWindow.show()
-        self.addWindow.exec_()
+        if self.addWindow is None:
+            self.addWindow = AddTaskWindow()
+            self.addWindow.finished.connect(self.UpdateTaskAfterAdd)
+            self.addWindow.show()
+            self.addWindow.exec_()
+            self.addWindow = None
+        else:
+            self.addWindow.activateWindow()
 
+
+    def ShowViewTask(self, index, task):
+        row, nameField, desField = task
+        self.ViewWindow = ViewEditTaskWindow(row[0], index)
+        self.ViewWindow.NameField.setText(row[1])
+        self.ViewWindow.DescriptionField.setPlainText(row[2])
+        self.ViewWindow.finished.connect(self.UpdateTask)
+        self.ViewWindow.finished.connect(self.ViewWindow.close)
+        self.ViewWindow.show()
+
+    def UpdateTask(self, list):
+        index = list[0]
+        row = list[1]
+        self.status_bar.showMessage(f"Updated task <<{row[1]}>> successfully.")
+        self.TaskList[index][0] = row  # updated row of list
+        self.TaskList[index][1].setText(row[1])  # updated taskbox text
+        self.TaskList[index][2].clicked.connect(lambda *args, i=index, r=self.TaskList[index]: self.ShowViewTask(i, r))
+        self.result = self.FetchAllTask()
+
+    def UpdateTaskAfterAdd(self, row):
+        self.status_bar.showMessage(f"Added task <<{row[1]}>> successfully.")
+        self.AddTask(row)
+        self.AddButtonConnect()
+
+    def SaveTasks(self):
+        msg = QMessageBox()
+        msg.setStyleSheet('color: white; background-color:#47515c; font-size:20px;')
+        msg.setIcon(QMessageBox.Question)
+        msg.setText("Are you sure the tasks have been completed?")
+        msg.setWindowTitle("Save & Exit Warning")
+        msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        ensure = msg.exec_()
+        if ensure == QMessageBox.Yes:
+            for task in self.TaskList:
+                ID = task[0][0]
+                if task[1].isChecked():
+                    sql = "DELETE FROM tasks WHERE ID=" + str(ID) + ";"
+                    cursor.execute(sql)
+            db.commit()
+            self.status_bar.showMessage("All changes saved, waiting for the system to exit...")
+            app = QApplication([])
+            app.closeAllWindows()
+        else:
+            # event.ignore()
+            pass
+
+    def UndoComplete(self):
+        for task in self.TaskList:
+            if task[1].isChecked():
+                task[1].setChecked(False)
+
+    def changeEvent(self, event):
+        if event.type() == QEvent.WindowStateChange:
+            if self.windowState()==Qt.WindowMinimized:
+                self.hide()
+                self.Tray.show()
+            elif self.windowState()==Qt.WindowMaximized:
+                self.showMaximized()
     def closeEvent(self, event):
         msg = QMessageBox()
         msg.setStyleSheet('color: white; background-color:#47515c; font-size:20px;')
         msg.setIcon(QMessageBox.Question)
-        msg.setText("আপনি কি শিওর প্রস্থান করতে চান?")
+        msg.setText("Are you sure you want to exit?")
         # msg.setInformativeText("এপ্লিকেশনটি চালাতে ইন্টারনেট সংযোগ প্রয়োজন")
         msg.setWindowTitle("Exit Warning")
         msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
@@ -152,4 +298,22 @@ class MainWindow(QMainWindow):
         else:
             event.ignore()
 
+    def __TrayOnclicked(self,reason):
+        if reason == QSystemTrayIcon.DoubleClick:
+            self.activateWindow()
+            self.showNormal()
+            self.Tray.hide()
+
+class DupicateInstance():
+    def __init__(self):
+        msg = QMessageBox()
+        msg.setStyleSheet('color: white; background-color:#47515c; font-size:20px;')
+        msg.setIcon(QMessageBox.Warning)
+        msg.setText("Application is running already ")
+        msg.setWindowTitle("Duplicate Instance Warning")
+        msg.setStandardButtons(QMessageBox.Abort)
+        ensure = msg.exec_()
+        if ensure == QMessageBox.Abort:
+            app = QApplication([])
+            app.closeAllWindows()
 
