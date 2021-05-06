@@ -136,3 +136,7 @@ dmypy.json
 .target
 .target/*
 
+.Output/
+.Output
+.Output/*
+
