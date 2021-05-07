@@ -4,5 +4,5 @@
 # Features
 * Remind you on startup.
 * You can add new tasks.
-* You can view and existing tasks.
+* You can view and edit existing tasks.
 * You can checkout the task which is done.
