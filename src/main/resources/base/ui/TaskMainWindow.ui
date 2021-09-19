@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>500</width>
-    <height>500</height>
+    <width>611</width>
+    <height>571</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -35,20 +35,263 @@ color:white;</string>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
-     <widget class="QScrollArea" name="scrollArea">
-      <property name="widgetResizable">
-       <bool>true</bool>
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
       </property>
-      <widget class="QWidget" name="scrollAreaWidgetContents">
-       <property name="geometry">
-        <rect>
-         <x>0</x>
-         <y>0</y>
-         <width>480</width>
-         <height>408</height>
-        </rect>
+      <property name="autoFillBackground">
+       <bool>false</bool>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QTabWidget::pane {
+    border: 1px solid white;
+
+}
+
+QTabWidget::tab-bar:top {
+    top: 1px;
+
+}
+
+QTabWidget::tab-bar:bottom {
+    bottom: 1px;
+
+}
+
+QTabWidget::tab-bar:left {
+    right: 1px;
+
+}
+
+QTabWidget::tab-bar:right {
+    left: 1px;
+
+}
+
+QTabBar::tab {
+    border: 1px solid blue;
+   background: rgba(0,0,0,0%);
+   color: rgb(255, 0, 0)
+}
+
+QTabBar::tab:selected {
+    background: white;
+}
+
+QTabBar::tab:!selected {
+    background: silver;
+}
+
+QTabBar::tab:!selected:hover {
+    background: #999;
+
+}
+
+QTabBar::tab:top:!selected {
+    margin-top: 3px;
+
+}
+
+QTabBar::tab:bottom:!selected {
+    margin-bottom: 3px;
+background-color: rgb(255, 255, 0);
+	color: rgb(0, 0, 127);
+}
+
+QTabBar::tab:top, QTabBar::tab:bottom {
+    min-width: 8ex;
+    margin-right: -1px;
+    padding: 5px 10px 5px 10px;
+
+}
+
+QTabBar::tab:top:selected {
+    border-bottom-color: none;
+
+}
+
+QTabBar::tab:bottom:selected {
+    border-top-color: none;
+
+}
+
+QTabBar::tab:top:last, QTabBar::tab:bottom:last,
+QTabBar::tab:top:only-one, QTabBar::tab:bottom:only-one {
+    margin-right: 0;
+}
+
+QTabBar::tab:left:!selected {
+    margin-right: 3px;
+}
+
+QTabBar::tab:right:!selected {
+    margin-left: 3px;
+}
+
+QTabBar::tab:left, QTabBar::tab:right {
+    min-height: 8ex;
+    margin-bottom: -1px;
+    padding: 10px 5px 10px 5px;
+}
+
+QTabBar::tab:left:selected {
+    border-left-color: none;
+}
+
+QTabBar::tab:right:selected {
+    border-right-color: none;
+
+}
+
+QTabBar::tab:left:last, QTabBar::tab:right:last,
+QTabBar::tab:left:only-one, QTabBar::tab:right:only-one {
+    margin-bottom: 0;
+
+}</string>
+      </property>
+      <property name="tabPosition">
+       <enum>QTabWidget::North</enum>
+      </property>
+      <property name="tabShape">
+       <enum>QTabWidget::Triangular</enum>
+      </property>
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="today">
+       <property name="styleSheet">
+        <string notr="true"/>
        </property>
-       <layout class="QVBoxLayout" name="verticalLayout"/>
+       <attribute name="title">
+        <string>Today</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_12">
+        <item>
+         <widget class="QScrollArea" name="scrollAreaToday">
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <widget class="QWidget" name="scrollAreaWidgetContents_5">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>571</width>
+             <height>425</height>
+            </rect>
+           </property>
+           <layout class="QVBoxLayout" name="TodayLayout"/>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="week">
+       <property name="autoFillBackground">
+        <bool>false</bool>
+       </property>
+       <attribute name="title">
+        <string>This Week</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_11">
+        <item>
+         <widget class="QScrollArea" name="scrollAreaWeek">
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <widget class="QWidget" name="scrollAreaWidgetContents_4">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>571</width>
+             <height>425</height>
+            </rect>
+           </property>
+           <layout class="QVBoxLayout" name="WeekLayout"/>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="upcoming">
+       <attribute name="title">
+        <string>Upcoming</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_10">
+        <item>
+         <widget class="QScrollArea" name="scrollAreaUpcoming">
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <widget class="QWidget" name="scrollAreaWidgetContents_3">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>571</width>
+             <height>425</height>
+            </rect>
+           </property>
+           <layout class="QVBoxLayout" name="UpcomingLayout"/>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="missed">
+       <attribute name="title">
+        <string>Missed</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_9">
+        <item>
+         <widget class="QScrollArea" name="scrollAreaMissed">
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <widget class="QWidget" name="scrollAreaWidgetContents_2">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>571</width>
+             <height>425</height>
+            </rect>
+           </property>
+           <layout class="QVBoxLayout" name="MissedLayout"/>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="done">
+       <attribute name="title">
+        <string>Done</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_8">
+        <item>
+         <widget class="QScrollArea" name="scrollAreaDone">
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <widget class="QWidget" name="scrollAreaWidgetContents">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>571</width>
+             <height>425</height>
+            </rect>
+           </property>
+           <layout class="QVBoxLayout" name="DoneLayout"/>
+          </widget>
+         </widget>
+        </item>
+       </layout>
       </widget>
      </widget>
     </item>
@@ -79,7 +322,7 @@ color:white;</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>500</width>
+     <width>611</width>
      <height>21</height>
     </rect>
    </property>

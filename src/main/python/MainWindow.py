@@ -1,9 +1,10 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QProgressBar, QPlainTextEdit, QMainWindow, QTextBrowser, \
+from datetime import timedelta
+from PyQt5.QtWidgets import QApplication, QDateEdit, QWidget, QPushButton, QProgressBar, QPlainTextEdit, QMainWindow, QTextBrowser, \
     QDialog, QMenu, QAction, QMessageBox, QStatusBar, QSlider, QLabel, QCheckBox, QDialogButtonBox, QVBoxLayout, \
     QHBoxLayout, QScrollArea, QLineEdit, QTextEdit, QSystemTrayIcon
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5 import uic, QtGui
-from PyQt5.QtCore import QObject, QThread, pyqtSignal, QEvent
+from PyQt5.QtCore import QObject, QThread, pyqtSignal, QEvent, QDate
 from PyQt5.QtCore import Qt
 from PyQt5 import QtCore
 import resources
@@ -18,6 +19,8 @@ class AddTaskWindow(QDialog):
         self.NameField = self.findChild(QLineEdit, 'NameField')
         self.DescriptionField = self.findChild(QTextEdit, 'DescriptionField')
         self.buttonBox = self.findChild(QDialogButtonBox, 'buttonBox')
+        self.deadline = self.findChild(QDateEdit,'deadline')
+        self.noDeadline = self.findChild(QCheckBox,'noDeadline')
 
         self.buttonBox.accepted.connect(self.AddTaskToDb)
         self.buttonBox.rejected.connect(self.reject)
@@ -25,7 +28,10 @@ class AddTaskWindow(QDialog):
     def AddTaskToDb(self):
         nameText = self.NameField.text()
         descriptionText = self.DescriptionField.toPlainText()
-        sql = "INSERT INTO tasks(name,description) VALUES('" + nameText + "','" + descriptionText + "');"
+        date = str(self.deadline.date().toPyDate())
+        noDead = int(self.noDeadline.isChecked())
+        # print(nameText,descriptionText,date,noDead)
+        sql = f"INSERT INTO tasks(name,description,deadline,nodeadline,isdone)  VALUES('{nameText}','{descriptionText}','{date}','{noDead}',0);"
         cursor.execute(sql)
         db.commit()
         sql = "SELECT * FROM tasks ORDER BY ID DESC LIMIT 1;"
@@ -37,15 +43,18 @@ class AddTaskWindow(QDialog):
 class ViewEditTaskWindow(QDialog):
     finished = pyqtSignal(list)
 
-    def __init__(self, id, index):
+    def __init__(self, id, index, isDone):
         super(ViewEditTaskWindow, self).__init__()
         uic.loadUi(appContext.get_resource('ui/ViewEditTaskWindow.ui'), self)
         self.id = id
         self.ListIndex = index  # index of Box List
+        self.isDone = isDone
 
         self.NameField = self.findChild(QLineEdit, 'NameField')
         self.DescriptionField = self.findChild(QTextEdit, 'DescriptionField')
         self.buttonBox = self.findChild(QDialogButtonBox, 'buttonBox')
+        self.deadline = self.findChild(QDateEdit,'deadline')
+        self.noDeadline = self.findChild(QCheckBox,'noDeadline')
 
         self.buttonBox.accepted.connect(self.EditTaskToDb)
         self.buttonBox.rejected.connect(self.reject)
@@ -53,12 +62,16 @@ class ViewEditTaskWindow(QDialog):
     def EditTaskToDb(self):
         name = self.NameField.text()
         description = self.DescriptionField.toPlainText()
+        date = str(self.deadline.date().toPyDate())
+        noDead = int(self.noDeadline.isChecked())
         sql = "UPDATE tasks SET name ='" + name + \
               "',description='" + description + \
+              "',deadline='" + date + \
+              "',nodeadline='" + str(noDead) + \
               "' WHERE ID=" + str(self.id) + ";"
         cursor.execute(sql)
         db.commit()
-        self.finished.emit([self.ListIndex, (self.id, name, description)])
+        self.finished.emit([self.ListIndex, (self.id, name, description,date,noDead, self.isDone)])
 
 
 class AboutWindow(QDialog):
@@ -176,29 +189,96 @@ class MainWindow(QMainWindow):
         self.buttonBox.accepted.connect(self.SaveTasks)
         self.buttonBox.rejected.connect(self.UndoComplete)
 
-        self.ScrollBoxContent = self.findChild(QVBoxLayout, 'verticalLayout')
+        self.TodayContent = self.findChild(QVBoxLayout, 'TodayLayout')
+        self.WeekContent = self.findChild(QVBoxLayout, 'WeekLayout')
+        self.UpcomingContent = self.findChild(QVBoxLayout, 'UpcomingLayout')
+        self.MissedContent = self.findChild(QVBoxLayout, 'MissedLayout')
+        self.DoneContent = self.findChild(QVBoxLayout, 'DoneLayout')
+
+        self.Today = date.today()
+
         self.status_bar = self.findChild(QStatusBar,"statusbar")
         self.TaskList = []
-        self.result = self.FetchAllTask()
-        for row in self.result:
-            self.AddTask(row)
+        # self.result = self.FetchAllTask()
+        # for row in self.result:
+        #     self.AddTask(row)
+        
+
+        self.GetTodayList()
+        self.GetWeekList()
+        self.GetUpcomingList()
+        self.GetMissedList()
+        self.GetDoneList()
+        # print(self.TaskList)
         self.AddButtonConnect()
 
-    def FetchAllTask(self):
-        sql = "SELECT * FROM tasks"
+    def GetTodayList(self):
+        startdate = str(self.Today)
+        # print(date)
+        sql = f"SELECT * FROM tasks WHERE (deadline='{startdate}' OR nodeadline=1) AND isdone=0 ORDER BY id DESC;"
         cursor.execute(sql)
-        return cursor.fetchall()
+        result = cursor.fetchall()
+        # print(result)
+        for row in result:
+            self.AddTask(row, self.TodayContent)
 
-    def AddTask(self, row):
+    def GetWeekList(self):
+        startdate = str(self.Today+ timedelta(days=1))
+        enddate = str(self.Today+ timedelta(days=7))
+        # print(date)
+        sql = f"SELECT * FROM tasks WHERE (deadline BETWEEN '{startdate}' AND '{enddate}') AND nodeadline=0 AND isdone=0 ORDER BY deadline ASC;"
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        # print(result)
+        for row in result:
+            self.AddTask(row, self.WeekContent)
+
+    def GetUpcomingList(self):
+        startdate = str(self.Today+ timedelta(days=7))
+        # print(startdate)
+        sql = f"SELECT * FROM tasks WHERE (deadline > '{startdate}') AND nodeadline=0 AND isdone=0 ORDER BY deadline ASC;"
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        print(result)
+        for row in result:
+            self.AddTask(row, self.UpcomingContent)
+
+    def GetMissedList(self):
+        startdate = str(self.Today)
+        # print(startdate)
+        sql = f"SELECT * FROM tasks WHERE (deadline < '{startdate}') AND nodeadline=0 AND isdone=0 ORDER BY deadline DESC;"
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        # print(result)
+        for row in result:
+            self.AddTask(row, self.MissedContent)
+
+    def GetDoneList(self):
+        sql = f"SELECT * FROM tasks WHERE isdone=1 ORDER BY deadline DESC;"
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        print(result)
+        for row in result:
+            self.AddTask(row, self.DoneContent, True)
+
+    # def FetchAllTask(self):
+    #     sql = "SELECT * FROM tasks"
+    #     cursor.execute(sql)
+    #     return cursor.fetchall()
+
+    def AddTask(self, row, container, doneBox = False):
         name = row[1]
         self.Hlayout = QHBoxLayout()
         self.TaskBox = TaskBox()
         self.TaskBox.setText(name)
+        if doneBox:
+            self.TaskBox.setChecked(doneBox)
+            self.TaskBox.setDisabled(doneBox)
         self.TaskDetails = DetailsButton()
         self.TaskList.append([row, self.TaskBox, self.TaskDetails])
         self.Hlayout.addWidget(self.TaskBox)
         self.Hlayout.addWidget(self.TaskDetails, 0, Qt.AlignLeft)
-        self.ScrollBoxContent.addLayout(self.Hlayout)
+        container.addLayout(self.Hlayout)
 
     def AddButtonConnect(self):
         for i, task in enumerate(self.TaskList):
@@ -226,10 +306,14 @@ class MainWindow(QMainWindow):
 
 
     def ShowViewTask(self, index, task):
+        # print(task)
         row, nameField, desField = task
-        self.ViewWindow = ViewEditTaskWindow(row[0], index)
+        self.ViewWindow = ViewEditTaskWindow(row[0], index, row[5])
         self.ViewWindow.NameField.setText(row[1])
         self.ViewWindow.DescriptionField.setPlainText(row[2])
+        Deadline = list(map(int, row[3].strip().split('-')))
+        self.ViewWindow.deadline.setDate(QDate(Deadline[0],Deadline[1],Deadline[2]))
+        self.ViewWindow.noDeadline.setChecked(bool(row[4]))
         self.ViewWindow.finished.connect(self.UpdateTask)
         self.ViewWindow.finished.connect(self.ViewWindow.close)
         self.ViewWindow.show()
@@ -238,15 +322,26 @@ class MainWindow(QMainWindow):
         index = list[0]
         row = list[1]
         self.status_bar.showMessage(f"Updated task <<{row[1]}>> successfully.")
-        self.TaskList[index][0] = row  # updated row of list
-        self.TaskList[index][1].setText(row[1])  # updated taskbox text
-        self.TaskList[index][2].clicked.connect(lambda *args, i=index, r=self.TaskList[index]: self.ShowViewTask(i, r))
-        self.result = self.FetchAllTask()
+        # self.TaskList[index][0] = row  # updated row of list
+        # self.TaskList[index][1].setText(row[1])  # updated taskbox text
+        # self.TaskList[index][2].clicked.connect(lambda *args, i=index, r=self.TaskList[index]: self.ShowViewTask(i, r))
+        # self.result = self.FetchAllTask()
+        self.Refresh()
 
     def UpdateTaskAfterAdd(self, row):
         self.status_bar.showMessage(f"Added task <<{row[1]}>> successfully.")
-        self.AddTask(row)
-        self.AddButtonConnect()
+        if row[4] == 1 or (datetime.strptime(row[3],r"%Y-%m-%d").date() == self.Today):
+            container = self.TodayContent
+        elif 1<= (datetime.strptime(row[3],r"%Y-%m-%d").date()-self.Today).days <= 7:
+            container = self.WeekContent
+        elif (datetime.strptime(row[3],r"%Y-%m-%d").date()-self.Today).days > 7:
+            container = self.UpcomingContent
+        else:
+            container = self.MissedContent
+
+        self.AddTask(row,container)
+        # self.AddButtonConnect()
+        self.TaskList[-1][2].clicked.connect(lambda *args, i=len(self.TaskList)-1, r=self.TaskList[-1]: self.ShowViewTask(i, r))
 
     def SaveTasks(self):
         msg = QMessageBox()
@@ -260,7 +355,8 @@ class MainWindow(QMainWindow):
             for task in self.TaskList:
                 ID = task[0][0]
                 if task[1].isChecked():
-                    sql = "DELETE FROM tasks WHERE ID=" + str(ID) + ";"
+                    # sql = "DELETE FROM tasks WHERE ID=" + str(ID) + ";"
+                    sql = "UPDATE tasks SET isdone = 1 WHERE ID=" + str(ID) + ";"
                     cursor.execute(sql)
             db.commit()
             self.status_bar.showMessage("All changes saved, waiting for the system to exit...")
@@ -275,6 +371,35 @@ class MainWindow(QMainWindow):
             if task[1].isChecked():
                 task[1].setChecked(False)
 
+    def Refresh(self):
+        self.deleteLayout(self.TodayContent)
+        self.deleteLayout(self.WeekContent)
+        self.deleteLayout(self.UpcomingContent)
+        self.deleteLayout(self.MissedContent)
+        self.deleteLayout(self.DoneContent)
+        self.TaskList =[]
+
+        self.GetTodayList()
+        self.GetWeekList()
+        self.GetUpcomingList()
+        self.GetMissedList()
+        self.GetDoneList()
+
+        self.AddButtonConnect()
+
+
+
+    def deleteLayout(self, layout):
+        if layout is not None:
+            while layout.count():
+                item = layout.takeAt(0)
+                widget = item.widget()
+                if widget is not None:
+                    widget.deleteLater()
+                else:
+                    self.deleteLayout(item.layout())
+            # sip.delete(layout)
+
     def changeEvent(self, event):
         if event.type() == QEvent.WindowStateChange:
             if self.windowState()==Qt.WindowMinimized:
@@ -287,7 +412,6 @@ class MainWindow(QMainWindow):
         msg.setStyleSheet('color: white; background-color:#47515c; font-size:20px;')
         msg.setIcon(QMessageBox.Question)
         msg.setText("Are you sure you want to exit?")
-        # msg.setInformativeText("এপ্লিকেশনটি চালাতে ইন্টারনেট সংযোগ প্রয়োজন")
         msg.setWindowTitle("Exit Warning")
         msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
         ensure = msg.exec_()

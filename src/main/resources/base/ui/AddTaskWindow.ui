@@ -104,6 +104,108 @@ color:black;</string>
        </property>
       </widget>
      </item>
+     <item alignment="Qt::AlignHCenter">
+      <widget class="QLabel" name="label_3">
+       <property name="font">
+        <font>
+         <pointsize>16</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background-color:rgba(0,0,0,0%);
+color:red;</string>
+       </property>
+       <property name="text">
+        <string>Select Deadline</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QDateEdit" name="deadline">
+       <property name="font">
+        <font>
+         <pointsize>14</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background-color:rgb(219, 219, 219);
+color:black;</string>
+       </property>
+       <property name="displayFormat">
+        <string>MMM/dd/yyyy</string>
+       </property>
+       <property name="date">
+        <date>
+         <year>2021</year>
+         <month>1</month>
+         <day>1</day>
+        </date>
+       </property>
+      </widget>
+     </item>
+     <item alignment="Qt::AlignHCenter">
+      <widget class="QCheckBox" name="noDeadline">
+       <property name="font">
+        <font>
+         <pointsize>18</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="layoutDirection">
+        <enum>Qt::RightToLeft</enum>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QCheckBox {
+    spacing: 1px;
+	background-color:rgba(0,0,0,0%);
+    color:red;
+}
+
+QCheckBox::indicator {
+    width: 30px;
+    height: 30px;
+}
+
+QCheckBox::indicator:unchecked {
+    image: url(:/Resources/unchecked.png);
+}
+
+QCheckBox::indicator:unchecked:hover {
+    image: url(:/Resources/unchecked_hover.png);
+}
+
+QCheckBox::indicator:unchecked:pressed {
+    image: url(:/Resources/unchecked_pressed.png);
+}
+
+QCheckBox::indicator:checked {
+    image: url(:/Resources/checked.png);
+}
+
+QCheckBox::indicator:checked:hover {
+    image: url(:/Resources/checked_hover.png);
+}
+
+QCheckBox::indicator:checked:pressed {
+    image: url(:/Resources/checked_pressed.png);
+}
+
+</string>
+       </property>
+       <property name="text">
+        <string>No Deadline: </string>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>50</width>
+         <height>50</height>
+        </size>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>
