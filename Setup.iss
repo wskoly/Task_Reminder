@@ -2,9 +2,9 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Task Reminder"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "2.0 beta"
 #define MyAppPublisher "Wahid Sadique Koly"
-#define MyAppURL "https://task-reminder.sourceforge.io/"
+#define MyAppURL "https://task.wskoly.ml/"
 #define MyAppExeName "Task Reminder.exe"
 #define MyAppAssocName MyAppName + " File"
 #define MyAppAssocExt ".koly"
@@ -27,7 +27,7 @@ DisableProgramGroupPage=yes
 LicenseFile=D:\Documents\GitHub\Task_Reminder\LICENSE
 ; Uncomment the following line to run in non administrative install mode (install for current user only.)
 ;PrivilegesRequired=lowest
-OutputBaseFilename=Task Reminder -v1.0.0
+OutputBaseFilename=Task Reminder -v2.0.0 beta
 SetupIconFile=D:\Documents\GitHub\Task_Reminder\target\Task Reminder\Icon.ico
 Compression=lzma
 SolidCompression=yes

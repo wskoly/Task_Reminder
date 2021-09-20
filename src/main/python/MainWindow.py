@@ -1,7 +1,7 @@
 from datetime import timedelta
 from PyQt5.QtWidgets import QApplication, QDateEdit, QWidget, QPushButton, QProgressBar, QPlainTextEdit, QMainWindow, QTextBrowser, \
     QDialog, QMenu, QAction, QMessageBox, QStatusBar, QSlider, QLabel, QCheckBox, QDialogButtonBox, QVBoxLayout, \
-    QHBoxLayout, QScrollArea, QLineEdit, QTextEdit, QSystemTrayIcon
+    QHBoxLayout, QScrollArea, QLineEdit, QTextEdit, QSystemTrayIcon, QFileDialog
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5 import uic, QtGui
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QEvent, QDate
@@ -181,11 +181,15 @@ class MainWindow(QMainWindow):
         self.AboutAction = self.findChild(QAction, 'actionAbout')
         self.ExitAction = self.findChild(QAction, 'actionExit')
         self.AddAction = self.findChild(QAction, 'actionAdd_Task')
+        self.importFile = self.findChild(QAction,'actionImport')
+        self.Export = self.findChild(QAction,'actionExport')
         self.buttonBox = self.findChild(QDialogButtonBox,'buttonBox')
 
         self.AboutAction.triggered.connect(self.ShowAbout)
         self.ExitAction.triggered.connect(self.close)
         self.AddAction.triggered.connect(self.ShowAddTask)
+        self.importFile.triggered.connect(self.ImportFile)
+        self.Export.triggered.connect(self.ExportFile)
         self.buttonBox.accepted.connect(self.SaveTasks)
         self.buttonBox.rejected.connect(self.UndoComplete)
 
@@ -239,7 +243,7 @@ class MainWindow(QMainWindow):
         sql = f"SELECT * FROM tasks WHERE (deadline > '{startdate}') AND nodeadline=0 AND isdone=0 ORDER BY deadline ASC;"
         cursor.execute(sql)
         result = cursor.fetchall()
-        print(result)
+        # print(result)
         for row in result:
             self.AddTask(row, self.UpcomingContent)
 
@@ -257,7 +261,7 @@ class MainWindow(QMainWindow):
         sql = f"SELECT * FROM tasks WHERE isdone=1 ORDER BY deadline DESC;"
         cursor.execute(sql)
         result = cursor.fetchall()
-        print(result)
+        # print(result)
         for row in result:
             self.AddTask(row, self.DoneContent, True)
 
@@ -387,8 +391,6 @@ class MainWindow(QMainWindow):
 
         self.AddButtonConnect()
 
-
-
     def deleteLayout(self, layout):
         if layout is not None:
             while layout.count():
@@ -407,6 +409,7 @@ class MainWindow(QMainWindow):
                 self.Tray.show()
             elif self.windowState()==Qt.WindowMaximized:
                 self.showMaximized()
+
     def closeEvent(self, event):
         msg = QMessageBox()
         msg.setStyleSheet('color: white; background-color:#47515c; font-size:20px;')
@@ -427,6 +430,27 @@ class MainWindow(QMainWindow):
             self.activateWindow()
             self.showNormal()
             self.Tray.hide()
+
+    def ImportFile(self):
+        file = QFileDialog.getOpenFileName(caption='Import Existing Data',directory=desktop,filter="Task Reminder File(*.koly)")
+        file_name = file[0]
+        if file_name !='':
+            #need to work on exception handling later
+            with open(file_name,'rb') as k: 
+                data = k.read()
+                with open(db_dir+r"/Task.db",'wb') as f:
+                    f.write(data)
+                    self.Refresh()
+
+    def ExportFile(self):
+        file = QFileDialog.getSaveFileName(caption='Export All Data',directory=desktop,filter="Task Reminder File(*.koly)")
+        file_name = file[0]
+        if file_name !='':
+            #need to work on exception handling later
+            with open(db_dir+r"/Task.db",'rb') as f:
+                data = f.read()
+                with open(file_name,'wb') as k:
+                    k.write(data)
 
 class DupicateInstance():
     def __init__(self):
